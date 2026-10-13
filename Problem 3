@@ -1,0 +1,90 @@
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+def draw_cat_plot():
+    # Import data
+    df = pd.read_csv("medical_examination.csv")
+
+    # Add an overweight column
+    df["overweight"] = (
+        df["weight"] / ((df["height"] / 100) ** 2) > 25
+    ).astype(int)
+
+    # Normalize data
+    df["cholesterol"] = (df["cholesterol"] > 1).astype(int)
+    df["gluc"] = (df["gluc"] > 1).astype(int)
+
+    # Draw categorical plot
+    df_cat = pd.melt(
+        df,
+        id_vars=["cardio"],
+        value_vars=[
+            "active",
+            "alco",
+            "cholesterol",
+            "gluc",
+            "overweight",
+            "smoke"
+        ]
+    )
+
+    # Create categorical plot
+    fig = sns.catplot(
+        data=df_cat,
+        x="variable",
+        kind="count",
+        hue="value",
+        col="cardio"
+    )
+
+    fig.set_axis_labels("variable", "total")
+    fig.set_titles("cardio = {col_name}")
+
+    # Save image
+    fig.savefig("catplot.png")
+    return fig
+
+
+def draw_heat_map():
+    # Import data
+    df = pd.read_csv("medical_examination.csv")
+
+    # Remove incorrect data
+    df_heat = df[
+        (df["ap_lo"] <= df["ap_hi"]) &
+        (df["height"] >= df["height"].quantile(0.025)) &
+        (df["height"] <= df["height"].quantile(0.975)) &
+        (df["weight"] >= df["weight"].quantile(0.025)) &
+        (df["weight"] <= df["weight"].quantile(0.975))
+    ]
+
+    # Calculate correlation matrix
+    corr = df_heat.corr()
+
+    # Generate a mask for the upper triangle
+    mask = np.triu(np.ones_like(corr, dtype=bool))
+
+    # Set up the matplotlib figure
+    fig, ax = plt.subplots(figsize=(12, 12))
+
+    # Draw heatmap
+    sns.heatmap(
+        corr,
+        mask=mask,
+        annot=True,
+        fmt=".1f",
+        square=True,
+        center=0,
+        linewidths=0.5,
+        cbar_kws={"shrink": 0.5},
+        vmax=0.24,
+        vmin=-0.16,
+        ax=ax
+    )
+
+    # Save image
+    fig.savefig("heatmap.png")
+    return fig
